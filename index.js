@@ -6,6 +6,7 @@ const checkPorts = require("./check_ports");
 const sqlite3 = require("sqlite3").verbose();
 const axios = require("axios");
 const { serverUrl, farmId } = require("./config");
+const { io } = require("socket.io-client");
 
 const app = express();
 const port = 3001;
@@ -16,10 +17,46 @@ const db = new sqlite3.Database(
 );
 let pumpState = "OFF";
 let lastCheckpoint = null;
+const socket = io(serverUrl);
+
+// Function to send command to the ESP32 (ON or OFF)
+function sendCommand(command, response) {
+  if (esp32Port && esp32Port.isOpen) {
+    esp32Port.write(`${command}\n`, (err) => {
+      if (err) {
+        console.error("Error writing to serial port:", err.message);
+        if (response) {
+          response.status(500).json({ error: "Failed to send data to ESP32" });
+        }
+      }
+      console.log(`Sent command to ESP32: ${command}`);
+      pumpState = command;
+      socket.emit(`${command === "ON" ? "startPump" : "stopPump"}`, { farmId });
+      if (response) {
+        response.json({ message: `Command sent: ${command}` });
+      }
+    });
+  }
+}
+
+socket.on("connect", () => {
+  socket.emit("joinFarm", farmId);
+});
+
+socket.on("startPump", () => {
+  sendCommand("ON");
+});
+
+socket.on("stopPump", () => {
+  sendCommand("OFF");
+});
+
+socket.on("disconnect", () => {
+  console.log("Disconnected from remote server");
+});
 
 // Middleware to parse incoming JSON requests
 app.use(express.json());
-
 app.use(express.static(path.join(__dirname, "public")));
 
 // Function to set up the SerialPort
@@ -173,51 +210,8 @@ app.get("/api/pump/:pump", (req, res) => {
   }
 
   // Send data to the serial monitor
-  esp32Port.write(`${pump}\n`, (err) => {
-    if (err) {
-      console.error("Error writing to serial port:", err.message);
-      return res.status(500).json({ error: "Failed to send data to ESP32" });
-    }
-    pumpState = pump;
-    console.log(`Sent to ESP32: ${pump}`);
-    res.json({ message: `Data sent: ${pump}` });
-  });
+  sendCommand(pump, res);
 });
-
-// Function to send command to the ESP32 (ON or OFF)
-function sendCommand(command) {
-  if (esp32Port && esp32Port.isOpen) {
-    esp32Port.write(`${command}\n`, (err) => {
-      if (err) {
-        console.error("Error writing to serial port:", err.message);
-      }
-      console.log(`Sent command to ESP32: ${command}`);
-    });
-  }
-}
-
-// Cron job to send data to the remote server every minute
-// cron.schedule("* * * * *", async () => {
-//   if (latestData) {
-//     try {
-//       console.log("Sending data to remote server...");
-
-//       // Replace with your remote server URL
-//       const response = await axios.post(
-//         "https://your-remote-server.com/endpoint",
-//         {
-//           data: latestData,
-//         }
-//       );
-
-//       console.log("Data successfully sent to remote server:", response.data);
-//     } catch (error) {
-//       console.error("Error sending data to remote server:", error.message);
-//     }
-//   } else {
-//     console.log("No data available to send.");
-//   }
-// });
 
 // Start the server and set up the serial port
 app.listen(port, () => {

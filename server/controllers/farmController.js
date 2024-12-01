@@ -53,9 +53,9 @@ exports.getFarmData = catchAsync(async (req, res, next) => {
             minute: "$_id.minute",
           },
         },
-        moisture: 1,
-        temperature: 1,
-        humidity: 1,
+        moisture: { $round: ["$moisture", 1] },
+        temperature: { $round: ["$temperature", 1] },
+        humidity: { $round: ["$humidity", 1] },
       },
     },
     {
@@ -68,7 +68,7 @@ exports.getFarmData = catchAsync(async (req, res, next) => {
 // Get farm Analysis
 exports.getFarmAnalysis = catchAsync(async (req, res, next) => {
   const { farmId } = req.params;
-  const { timesolt } = req.query;
+  const { timeslot } = req.query;
   let startDate = null;
   const groupBy = {
     day: { $dayOfMonth: "$timestamp" },
@@ -76,7 +76,7 @@ exports.getFarmAnalysis = catchAsync(async (req, res, next) => {
     year: { $year: "$timestamp" },
   };
 
-  switch (timesolt) {
+  switch (timeslot) {
     case "1d":
       startDate = new Date().getTime() - 24 * 60 * 60 * 1000;
       groupBy.hour = { $hour: "$timestamp" };

@@ -4,7 +4,6 @@ import SensorCard from "./components/compound/SensorCard";
 import TimeSeriesChart from "./components/compound/TimeSerieschart";
 import { ChartConfig } from "./components/ui/chart";
 import axios from "axios";
-import { Button } from "./components/ui/button";
 
 type SensorData = {
   temperature: number;
@@ -71,13 +70,6 @@ function App() {
 
   return (
     <main className="w-screen h-min overflow-x-hidden grid grid-cols-2">
-      <div className="col-span-2 py-5 px-10 flex justify-end">
-        <a href="http://">
-          <Button className="bg-slate-800 text-slate-50 hover:text-slate-900 rounded-xl">
-            Connect to Server
-          </Button>
-        </a>
-      </div>
       <div className="bg-gray-100 p-5 flex flex-col gap-5">
         <h1 className="col-span-2 text-3xl h-min font-semibold text-gray-800 text-center">
           Current Stats
