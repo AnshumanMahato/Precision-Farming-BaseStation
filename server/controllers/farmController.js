@@ -110,9 +110,15 @@ exports.getFarmAnalysis = catchAsync(async (req, res, next) => {
         _id: {
           ...groupBy,
         },
-        moisture: { $avg: "$moisture" },
-        temperature: { $avg: "$temperature" },
-        humidity: { $avg: "$humidity" },
+        avgmoisture: { $avg: "$moisture" },
+        maxmoisture: { $max: "$moisture" },
+        minmoisture: { $min: "$moisture" },
+        avgtemperature: { $avg: "$temperature" },
+        maxtemperature: { $max: "$temperature" },
+        mintemperature: { $min: "$temperature" },
+        avghumidity: { $avg: "$humidity" },
+        maxhumidity: { $max: "$humidity" },
+        minhumidity: { $min: "$humidity" },
       },
     },
     {
@@ -126,9 +132,21 @@ exports.getFarmAnalysis = catchAsync(async (req, res, next) => {
             hour: groupBy.hour ? "$_id.hour" : 0,
           },
         },
-        moisture: 1,
-        temperature: 1,
-        humidity: 1,
+        moisture: {
+          avg: { $round: ["$avgmoisture", 1] },
+          max: "$maxmoisture",
+          min: "$minmoisture",
+        },
+        temperature: {
+          avg: { $round: ["$avgtemperature", 1] },
+          max: "$maxtemperature",
+          min: "$mintemperature",
+        },
+        humidity: {
+          avg: { $round: ["$avghumidity", 1] },
+          max: "$maxhumidity",
+          min: "$minhumidity",
+        },
       },
     },
     {
