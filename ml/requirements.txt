@@ -1,0 +1,12 @@
+numpy
+pandas
+scikit-learn
+matplotlib
+seaborn
+jupyterlab
+tensorflow  # Remove if using PyTorch
+torch torchvision torchaudio  # Remove if using TensorFlow
+xgboost
+lightgbm
+fastapi  # Optional, for deployment
+uvicorn  # Optional, for running FastAPI server
