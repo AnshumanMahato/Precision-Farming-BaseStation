@@ -8,6 +8,8 @@ router
   .post(farmController.insertFarmData)
   .get(farmController.getFarmData);
 
+router.route("/cropPrediction").post(farmController.getCropPrediction);
+
 router.route("/:farmId/analyse").get(farmController.getFarmAnalysis);
 
 module.exports = router;

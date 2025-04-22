@@ -1,6 +1,8 @@
 const Farm = require("../models/Farm");
 const FarmData = require("../models/FarmData");
 const catchAsync = require("../utils/catchAsync");
+const { spawn } = require("child_process");
+const path = require("path");
 
 // Insert farm data
 exports.insertFarmData = catchAsync(async (req, res, next) => {
@@ -154,4 +156,66 @@ exports.getFarmAnalysis = catchAsync(async (req, res, next) => {
     },
   ]);
   res.status(200).json({ farmData });
+});
+
+exports.getCropPrediction = catchAsync(async (req, res, next) => {
+  try {
+    const { N, P, K, temperature, humidity, ph, rainfall } = req.body;
+
+    // Validate input
+    if (
+      [N, P, K, temperature, humidity, ph, rainfall].some(
+        (val) => val === undefined
+      )
+    ) {
+      return res
+        .status(400)
+        .json({ error: "Missing one or more input parameters" });
+    }
+
+    // Prepare arguments for Python script
+    const pythonScript = path.join(
+      __dirname,
+      "../ml_models/crop_prediction_model/predict.py"
+    );
+    const args = [N, P, K, temperature, humidity, ph, rainfall].map((val) =>
+      val.toString()
+    );
+
+    // Spawn the Python process
+    const python = spawn("python", [pythonScript, ...args]);
+
+    let output = "";
+    let error = "";
+
+    python.stdout.on("data", (data) => {
+      output += data.toString();
+    });
+
+    python.stderr.on("data", (data) => {
+      error += data.toString();
+    });
+
+    python.on("close", (code) => {
+      if (error) {
+        return res.status(500).json({ error: "Python Error", details: error });
+      }
+
+      try {
+        const result = JSON.parse(output);
+        if (result.error) {
+          return res.status(400).json({ error: result.error });
+        }
+        return res.json({ predictions: result });
+      } catch (err) {
+        return res
+          .status(500)
+          .json({ error: "Failed to parse prediction output", raw: output });
+      }
+    });
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ error: "Server error", details: err.message });
+  }
 });

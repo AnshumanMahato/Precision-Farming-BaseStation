@@ -1,3 +1,4 @@
+import os
 import sys
 import pickle
 import numpy as np
@@ -13,13 +14,21 @@ warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 feature_names = ["N", "P", "K", "temperature", "humidity", "ph", "rainfall"]
 
 # Load saved model, scaler, and label encoder
-with open("model.pkl", "rb") as f:
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Paths to the model, scaler, and label encoder
+model_path = os.path.join(BASE_DIR, "model.pkl")
+scaler_path = os.path.join(BASE_DIR, "scaler.pkl")
+label_encoder_path = os.path.join(BASE_DIR, "label_encoder.pkl")
+
+with open(model_path, "rb") as f:
     model = pickle.load(f)
 
-with open("scaler.pkl", "rb") as f:
+with open(scaler_path, "rb") as f:
     scaler = pickle.load(f)
 
-with open("label_encoder.pkl", "rb") as f:
+with open(label_encoder_path, "rb") as f:
     label_encoder = pickle.load(f)
 
 # Read input from Node.js and validate
